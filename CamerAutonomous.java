@@ -21,23 +21,30 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
+
+import java.io.File;
 import java.lang.Thread;
 import java.lang.String;
 import java.lang.Math;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.*;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.util.ReadWriteFile;
 
+import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
@@ -54,36 +61,23 @@ import org.openftc.easyopencv.OpenCvPipeline;
 @Autonomous
 public class CamerAutonomous extends LinearOpMode
 {
-    public void driveFowardinches(int inchs)
-    {
-
-        motor1.setTargetPosition(inchs*1440/4);
-        motor2.setTargetPosition(-(inchs*1440/4));
-        motor3.setTargetPosition(inchs*1440/4);
-        motor4.setTargetPosition(-(inchs*1440/4));
-
-        motor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        motor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        motor3.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        motor4.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-        while(motor1.isBusy()||motor2.isBusy()||motor3.isBusy()||motor4.isBusy()){
-            sleep(50);
-        }
-    }
 
     OpenCvInternalCamera phoneCam;
     SkystoneDeterminationPipeline pipeline;
 
-    private DcMotor motor1;
-    private DcMotor motor2;
-    private DcMotor motor3;
-    private DcMotor motor4;
-    private DcMotor motor5;
-    private DcMotor motor6;
-    private DcMotor motor7;
-    private Servo servo1;
-    private Servo servo2;
+
+    static private DcMotor motor1;
+    static private DcMotor motor2;
+    static private DcMotor motor3;
+    static private DcMotor motor4;
+    static private DcMotor motor5;
+    static private DcMotor motor6;
+    static private DcMotor motor7;
+    static private Servo servo1;
+    static private Servo servo2;
+
+    static boolean armOut = false;
+
 
     @Override
     public void runOpMode()
@@ -98,14 +92,22 @@ public class CamerAutonomous extends LinearOpMode
         Servo servo1 = hardwareMap.get(Servo.class, "servo1");
         Servo servo2 = hardwareMap.get(Servo.class, "servo2");
 
+
+        motor1.setTargetPosition(0);
+        motor2.setTargetPosition(0);
+        motor3.setTargetPosition(0);
+        motor4.setTargetPosition(0);
+        motor5.setTargetPosition(0);
+        motor6.setTargetPosition(0);
+        motor7.setTargetPosition(0);
+
         motor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor3.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor4.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor5.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        motor6.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        motor6.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor7.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
 
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
@@ -127,25 +129,96 @@ public class CamerAutonomous extends LinearOpMode
             }
         });
 
+
         waitForStart();
 
-
-        while (opModeIsActive())
-        {
             telemetry.addData("Analysis", pipeline.getAnalysis());
-            telemetry.addData("Position", pipeline.position);
+            telemetry.addData("Position Activated", pipeline.position);
             telemetry.update();
 
             // Don't burn CPU cycles busy-looping in this sample
-            sleep(1500);
-            if (SkystoneDeterminationPipeline.RingPosition == SkystoneDeterminationPipeline.RingPosition.NONE) {
-                driveForwardinches(50);
-            } else if (SkystoneDeterminationPipeline.RingPosition == SkystoneDeterminationPipeline.RingPosition.ONE) {
-                driveForwardinches(76);
+            sleep(2000);
+                   if (pipeline.position == SkystoneDeterminationPipeline.RingPosition.NONE) {
+                driveForwardInches(50);
+            } else if (pipeline.position == SkystoneDeterminationPipeline.RingPosition.ONE) {
+                driveForwardInches(76);
             } else {
-                driveForwardinches(113);
+                driveForwardInches(113);
             }
+
+    }
+
+    static void turnLeft()
+    {
+
+
+        motor1.setTargetPosition(11528);
+        motor2.setTargetPosition(-11528);
+        motor3.setTargetPosition(11528);
+        motor4.setTargetPosition(-11528);
+
+        motor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motor3.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motor4.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+
+
+        while(motor1.isBusy()||motor2.isBusy()||motor3.isBusy()||motor4.isBusy()){
+            try {
+                Thread.sleep(50);
+            } catch (Exception Ex) {}
+
         }
+    }
+
+
+    static void armToggle()
+    {
+        if (armOut == false) {
+
+            armOut = true;
+        } else {
+
+            armOut = false;
+        }
+    }
+
+    static void driveForwardInches(int inches)
+    {
+
+        DcMotor motor1 = hardwareMap.get(DcMotor.class, "motor1");
+        DcMotor motor2 = hardwareMap.get(DcMotor.class, "motor2");
+        DcMotor motor3 = hardwareMap.get(DcMotor.class, "motor3");
+        DcMotor motor4 = hardwareMap.get(DcMotor.class, "motor4");
+        DcMotor motor5 = hardwareMap.get(DcMotor.class, "motor5");
+        DcMotor motor6 = hardwareMap.get(DcMotorEx.class, "motor6");
+        DcMotor motor7 = hardwareMap.get(DcMotor.class, "motor7");
+        Servo servo1 = hardwareMap.get(Servo.class, "servo1");
+        Servo servo2 = hardwareMap.get(Servo.class, "servo2");
+
+        motor1.setTargetPosition(0);
+        motor2.setTargetPosition(0);
+        motor3.setTargetPosition(0);
+        motor4.setTargetPosition(0);
+
+        motor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motor3.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motor4.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        motor1.setTargetPosition(inches*1440/4);
+        motor2.setTargetPosition(-(inches*1440/4));
+        motor3.setTargetPosition(inches*1440/4);
+        motor4.setTargetPosition(-(inches*1440/4));
+
+        while(motor1.isBusy()||motor2.isBusy()||motor3.isBusy()||motor4.isBusy()){
+            try {
+                Thread.sleep(50);
+            } catch (Exception Ex) {}
+
+        }
+
     }
 
     public static class SkystoneDeterminationPipeline extends OpenCvPipeline
@@ -171,10 +244,10 @@ public class CamerAutonomous extends LinearOpMode
         /*
          * The core values which define the location and size of the sample regions
          */
-        static final Point REGION1_TOPLEFT_ANCHOR_POINT = new Point(130,70);
+        static final Point REGION1_TOPLEFT_ANCHOR_POINT = new Point(200, 150);
 
-        static final int REGION_WIDTH = 100;
-        static final int REGION_HEIGHT = 100;
+        static final int REGION_WIDTH = 75;
+        static final int REGION_HEIGHT = 60;
 
         final int FOUR_RING_THRESHOLD = 134;
         final int ONE_RING_THRESHOLD = 129;
@@ -195,7 +268,7 @@ public class CamerAutonomous extends LinearOpMode
         int avg1;
 
         // Volatile since accessed by OpMode thread w/o synchronization
-        private volatile RingPosition position = RingPosition.FOUR;
+        public volatile RingPosition position = RingPosition.FOUR;
 
         /*
          * This function takes the RGB frame, converts to YCrCb,
