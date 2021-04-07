@@ -77,20 +77,25 @@ public class CamerAutonomous extends LinearOpMode
     static private Servo servo2;
 
     static boolean armOut = false;
+    static boolean gripperOpen = false;
 
 
     @Override
-    public void runOpMode()
-    {
-        DcMotor motor1 = hardwareMap.get(DcMotor.class, "motor1");
-        DcMotor motor2 = hardwareMap.get(DcMotor.class, "motor2");
-        DcMotor motor3 = hardwareMap.get(DcMotor.class, "motor3");
-        DcMotor motor4 = hardwareMap.get(DcMotor.class, "motor4");
-        DcMotor motor5 = hardwareMap.get(DcMotor.class, "motor5");
-        DcMotor motor6 = hardwareMap.get(DcMotorEx.class, "motor6");
-        DcMotor motor7 = hardwareMap.get(DcMotor.class, "motor7");
-        Servo servo1 = hardwareMap.get(Servo.class, "servo1");
-        Servo servo2 = hardwareMap.get(Servo.class, "servo2");
+    public void runOpMode() {
+        motor1 = hardwareMap.get(DcMotor.class, "motor1");
+        motor2 = hardwareMap.get(DcMotor.class, "motor2");
+        motor3 = hardwareMap.get(DcMotor.class, "motor3");
+        motor4 = hardwareMap.get(DcMotor.class, "motor4");
+        motor5 = hardwareMap.get(DcMotor.class, "motor5");
+        motor6 = hardwareMap.get(DcMotorEx.class, "motor6");
+        motor7 = hardwareMap.get(DcMotor.class, "motor7");
+        servo1 = hardwareMap.get(Servo.class, "servo1");
+        servo2 = hardwareMap.get(Servo.class, "servo2");
+
+        motor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motor2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motor3.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motor4.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
 
         motor1.setTargetPosition(0);
@@ -120,42 +125,69 @@ public class CamerAutonomous extends LinearOpMode
         // landscape orientation, though.
         phoneCam.setViewportRenderingPolicy(OpenCvCamera.ViewportRenderingPolicy.OPTIMIZE_VIEW);
 
-        phoneCam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
-        {
+        phoneCam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
             @Override
-            public void onOpened()
-            {
-                phoneCam.startStreaming(320,240, OpenCvCameraRotation.SIDEWAYS_LEFT);
+            public void onOpened() {
+                phoneCam.startStreaming(320, 240, OpenCvCameraRotation.SIDEWAYS_LEFT);
             }
         });
 
 
         waitForStart();
-
+        int x = 0;
+        while (opModeIsActive()) {
             telemetry.addData("Analysis", pipeline.getAnalysis());
             telemetry.addData("Position Activated", pipeline.position);
             telemetry.update();
+            x++;
 
-            // Don't burn CPU cycles busy-looping in this sample
-            sleep(2000);
-                   if (pipeline.position == SkystoneDeterminationPipeline.RingPosition.NONE) {
-                driveForwardInches(50);
-            } else if (pipeline.position == SkystoneDeterminationPipeline.RingPosition.ONE) {
-                driveForwardInches(76);
-            } else {
-                driveForwardInches(113);
+            if (x > 3000) {
+                // Don't burn CPU cycles busy-looping in this sample
+                sleep(3000);
+                if (pipeline.position == SkystoneDeterminationPipeline.RingPosition.NONE) {
+                    telemetry.addLine("drive reached");
+                    telemetry.update();
+                    driveForwardInches(74);
+                    telemetry.addLine("turn reached");
+                    telemetry.update();
+                    turnLeft();
+                    armToggle();
+                    telemetry.addLine("end reached");
+                    telemetry.update();
+                } else if (pipeline.position == SkystoneDeterminationPipeline.RingPosition.ONE) {
+                    telemetry.addLine("drive reached");
+                    telemetry.update();
+                    driveForwardInches(78);
+                    telemetry.addLine("end reached");
+                    telemetry.update();
+                    armToggle();
+                } else {
+                    telemetry.addLine("drive reached");
+                    telemetry.update();
+                    driveForwardInches(115);
+                    telemetry.addLine("turn reached");
+                    telemetry.update();
+                    turnLeft();
+                    telemetry.addLine("end reached");
+                    armToggle();
+                    telemetry.update();
+                }
+                stop();
             }
-
+        }
     }
 
     static void turnLeft()
     {
+        motor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motor2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motor3.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motor4.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-
-        motor1.setTargetPosition(11528);
-        motor2.setTargetPosition(-11528);
-        motor3.setTargetPosition(11528);
-        motor4.setTargetPosition(-11528);
+        motor1.setTargetPosition(2700);
+        motor2.setTargetPosition(2700);
+        motor3.setTargetPosition(2700);
+        motor4.setTargetPosition(2700);
 
         motor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -166,58 +198,79 @@ public class CamerAutonomous extends LinearOpMode
 
         while(motor1.isBusy()||motor2.isBusy()||motor3.isBusy()||motor4.isBusy()){
             try {
+                motor1.setPower(1);
+                motor2.setPower(1);
+                motor3.setPower(1);
+                motor4.setPower(1);
+
                 Thread.sleep(50);
             } catch (Exception Ex) {}
 
         }
+        motor1.setPower(0);
+        motor2.setPower(0);
+        motor3.setPower(0);
+        motor4.setPower(0);
     }
 
-
+    static void waitMilis(int milis)
+    {
+        try
+        {
+            Thread.sleep(milis);
+        } except(Exception ex)
+        { }
+    }
     static void armToggle()
     {
-        if (armOut == false) {
-
-            armOut = true;
+        if (armOut == false && gripperOpen == false) {
+            motor7.setPower(.75);
+            waitMilis(1200);
         } else {
-
+            motor7.setTargetPosition(0);
             armOut = false;
         }
+        while (motor7.isBusy())
+        {
+            motor7.setPower(1);
+        }
+        motor7.setPower(0);
     }
 
     static void driveForwardInches(int inches)
     {
-
-        DcMotor motor1 = hardwareMap.get(DcMotor.class, "motor1");
-        DcMotor motor2 = hardwareMap.get(DcMotor.class, "motor2");
-        DcMotor motor3 = hardwareMap.get(DcMotor.class, "motor3");
-        DcMotor motor4 = hardwareMap.get(DcMotor.class, "motor4");
-        DcMotor motor5 = hardwareMap.get(DcMotor.class, "motor5");
-        DcMotor motor6 = hardwareMap.get(DcMotorEx.class, "motor6");
-        DcMotor motor7 = hardwareMap.get(DcMotor.class, "motor7");
-        Servo servo1 = hardwareMap.get(Servo.class, "servo1");
-        Servo servo2 = hardwareMap.get(Servo.class, "servo2");
-
-        motor1.setTargetPosition(0);
-        motor2.setTargetPosition(0);
-        motor3.setTargetPosition(0);
-        motor4.setTargetPosition(0);
+        motor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motor2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motor3.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motor4.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motor1.setTargetPosition(-(inches*1440/12));
+        motor2.setTargetPosition(-(inches*1440/12));
+        motor3.setTargetPosition(inches*1440/12);
+        motor4.setTargetPosition(inches*1440/12);
 
         motor1.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor3.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor4.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-        motor1.setTargetPosition(inches*1440/4);
-        motor2.setTargetPosition(-(inches*1440/4));
-        motor3.setTargetPosition(inches*1440/4);
-        motor4.setTargetPosition(-(inches*1440/4));
+
 
         while(motor1.isBusy()||motor2.isBusy()||motor3.isBusy()||motor4.isBusy()){
             try {
+                motor1.setPower(1);
+                motor2.setPower(1);
+                motor3.setPower(1);
+                motor4.setPower(1);
+
                 Thread.sleep(50);
             } catch (Exception Ex) {}
 
         }
+        motor1.setPower(0);
+        motor2.setPower(0);
+        motor3.setPower(0);
+        motor4.setPower(0);
+
 
     }
 
@@ -247,7 +300,7 @@ public class CamerAutonomous extends LinearOpMode
         static final Point REGION1_TOPLEFT_ANCHOR_POINT = new Point(200, 150);
 
         static final int REGION_WIDTH = 75;
-        static final int REGION_HEIGHT = 60;
+        static final int REGION_HEIGHT = 80;
 
         final int FOUR_RING_THRESHOLD = 134;
         final int ONE_RING_THRESHOLD = 129;
