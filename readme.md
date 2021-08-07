@@ -1,3 +1,5 @@
 ## DSD Code
 
-this is just my repo for keeping my ultimate goal code. do with it what you want. idc.
+FTC 17191's code for the 2020-2021 ultimate goal season,
+
+Under GPLv2
